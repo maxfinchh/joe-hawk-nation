@@ -13,7 +13,8 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.anonymous.joe-hawk-nation"
     },
     "android": {
       "adaptiveIcon": {
@@ -23,6 +24,12 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "jsEngine": "hermes",
+    "extra": {
+      "eas": {
+        "projectId": "395532c4-5005-42be-9ad2-816d7e8e9d81"
+      }
     }
   }
 }
