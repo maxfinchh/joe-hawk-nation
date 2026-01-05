@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useLayoutEffect } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { useCallback } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, Image, Alert } from 'react-native';
 import { Video } from 'expo-av';
 import { doc, getDoc, collection, getDocs, deleteDoc } from 'firebase/firestore';
 import { auth, db } from '../firebaseConfig';
@@ -158,9 +158,28 @@ export default function HomeScreen({ navigation }) {
               <Text style={styles.pickDate}>
                 {item.date ? new Date(item.date).toLocaleDateString() : ''}
               </Text>
-              <TouchableOpacity style={styles.likeButton}>
-                <Text style={styles.likeButtonText}>👍 Like</Text>
-              </TouchableOpacity>
+
+              <View style={styles.footerButtons}>
+                <TouchableOpacity style={styles.likeButton}>
+                  <Text style={styles.likeButtonText}>👍 Like</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.commentsButton}
+                  onPress={() => {
+                    if (item.isPremium && !isPremiumUser) {
+                      Alert.alert('Premium Pick', 'Upgrade to premium to view and comment on this pick.');
+                      return;
+                    }
+                    navigation.navigate('Comments', {
+                      pickId: item.id,
+                      title: item.title,
+                    });
+                  }}
+                >
+                  <Text style={styles.commentsButtonText}>💬 Comments</Text>
+                </TouchableOpacity>
+              </View>
             </View>
             {isAdmin && (
               <View style={{ flexDirection: 'row', marginTop: 5 }}>
@@ -244,6 +263,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  footerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  commentsButton: {
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    backgroundColor: '#eee',
+    borderRadius: 5,
+  },
+  commentsButtonText: {
+    fontSize: 14,
+    color: '#333',
   },
   likeButton: {
     paddingVertical: 4,

@@ -12,6 +12,7 @@ import SignUpScreen from './screens/SignUpScreen';
 import PostPickScreen from './screens/PostPickScreen';
 import EditPickScreen from './screens/EditPickScreen';
 import ProfileScreen from './screens/ProfileScreen';
+import CommentsScreen from './screens/CommentsScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -48,6 +49,13 @@ export default function App() {
         <Stack.Screen name="PostPick" component={PostPickScreen} />
         <Stack.Screen name="EditPickScreen" component={EditPickScreen} />
         <Stack.Screen name="Profile" component={ProfileScreen} />
+        <Stack.Screen
+          name="Comments"
+          component={CommentsScreen}
+          options={{
+            title: 'Comments',
+          }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );
