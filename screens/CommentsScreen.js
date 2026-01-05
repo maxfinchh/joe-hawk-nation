@@ -31,7 +31,6 @@ export default function CommentsScreen({ route, navigation }) {
 
   const user = auth.currentUser;
 
-  // Match what you're doing elsewhere: admin by email list
   const adminEmails = useMemo(
     () => ['tmaxfinch6@gmail.com', 'joehawkNation@icloud.com'],
     []
@@ -58,15 +57,12 @@ export default function CommentsScreen({ route, navigation }) {
           return {
             id: d.id,
             ...raw,
-            // Convert Firestore Timestamp -> JS Date for display
             date: raw.date?.toDate?.() || null,
           };
         });
         setComments(data);
       },
-      (err) => {
-        console.error('Error loading comments:', err);
-      }
+      (err) => console.error('Error loading comments:', err)
     );
 
     return () => unsub();
@@ -83,14 +79,12 @@ export default function CommentsScreen({ route, navigation }) {
     setSending(true);
     try {
       const commentsRef = collection(db, 'picks', pickId, 'comments');
-
       await addDoc(commentsRef, {
         text: trimmed,
         date: serverTimestamp(),
         authorId: user.uid,
         authorLabel: isAdmin ? 'Joe Hawk' : 'Anonymous',
       });
-
       setText('');
     } catch (err) {
       console.error('Error creating comment:', err);
@@ -129,62 +123,73 @@ export default function CommentsScreen({ route, navigation }) {
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 110 : 0}
     >
-      <FlatList
-        data={comments}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={{ paddingBottom: 90 }}
-        renderItem={({ item }) => (
-          <View style={styles.commentCard}>
-            <View style={styles.commentHeader}>
-              <Text style={styles.author}>{item.authorLabel || 'Anonymous'}</Text>
-              <Text style={styles.dateText}>
-                {item.date ? item.date.toLocaleString() : ''}
-              </Text>
+      <View style={styles.inner}>
+        <FlatList
+          data={comments}
+          keyExtractor={(item) => item.id}
+          style={{ flex: 1 }}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          contentContainerStyle={{ paddingBottom: 12 }}
+          renderItem={({ item }) => (
+            <View style={styles.commentCard}>
+              <View style={styles.commentHeader}>
+                <Text style={styles.author}>{item.authorLabel || 'Anonymous'}</Text>
+                <Text style={styles.dateText}>
+                  {item.date ? item.date.toLocaleString() : ''}
+                </Text>
+              </View>
+
+              <Text style={styles.commentText}>{item.text}</Text>
+
+              {canDelete(item) && (
+                <TouchableOpacity
+                  onPress={() => handleDelete(item.id)}
+                  style={styles.deleteBtn}
+                >
+                  <Text style={styles.deleteText}>Delete</Text>
+                </TouchableOpacity>
+              )}
             </View>
-
-            <Text style={styles.commentText}>{item.text}</Text>
-
-            {canDelete(item) && (
-              <TouchableOpacity
-                onPress={() => handleDelete(item.id)}
-                style={styles.deleteBtn}
-              >
-                <Text style={styles.deleteText}>Delete</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        )}
-        ListEmptyComponent={
-          <Text style={{ textAlign: 'center', marginTop: 20, color: 'gray' }}>
-            No comments yet.
-          </Text>
-        }
-      />
-
-      <View style={styles.inputBar}>
-        <TextInput
-          value={text}
-          onChangeText={setText}
-          placeholder="Write a comment..."
-          style={styles.input}
-          editable={!sending}
+          )}
+          ListEmptyComponent={
+            <Text style={{ textAlign: 'center', marginTop: 20, color: 'gray' }}>
+              No comments yet.
+            </Text>
+          }
         />
-        <TouchableOpacity
-          onPress={handleSend}
-          style={[styles.sendBtn, sending ? { opacity: 0.6 } : null]}
-          disabled={sending}
-        >
-          <Text style={styles.sendText}>{sending ? '...' : 'Send'}</Text>
-        </TouchableOpacity>
+
+        <View style={styles.inputBar}>
+          <TextInput
+            value={text}
+            onChangeText={setText}
+            placeholder="Write a comment..."
+            placeholderTextColor="#888"
+            style={styles.input}
+            editable={!sending}
+            returnKeyType="send"
+            onSubmitEditing={handleSend}
+            blurOnSubmit={false}
+          />
+          <TouchableOpacity
+            onPress={handleSend}
+            style={[styles.sendBtn, sending ? { opacity: 0.6 } : null]}
+            disabled={sending}
+          >
+            <Text style={styles.sendText}>{sending ? '...' : 'Send'}</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 12 },
+  container: { flex: 1 },
+  inner: { flex: 1, padding: 12 },
+
   commentCard: {
     backgroundColor: '#f9f9f9',
     borderRadius: 10,
@@ -205,10 +210,6 @@ const styles = StyleSheet.create({
   deleteText: { color: 'red', fontSize: 13 },
 
   inputBar: {
-    position: 'absolute',
-    left: 12,
-    right: 12,
-    bottom: 12,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'white',
@@ -217,6 +218,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 10,
     paddingVertical: 8,
+    marginTop: 8,
   },
   input: { flex: 1, fontSize: 16, paddingVertical: 6, paddingRight: 10 },
   sendBtn: {
