@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Switch, Alert } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet, Switch, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage, db } from '../firebaseConfig';
@@ -89,45 +89,58 @@ export default function PostPickScreen({ navigation, route }) {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Post a New Pick</Text>
-      <TouchableOpacity onPress={pickMedia} style={styles.input}>
-        <Text>{mediaUri ? 'Change Media' : 'Add Image or Video'}</Text>
-      </TouchableOpacity>
-      {mediaUri && mediaType === 'image' && (
-        <Image source={{ uri: mediaUri }} style={{ width: '100%', height: 200, marginBottom: 15 }} />
-      )}
-      <TextInput
-        style={styles.input}
-        placeholder="Pick Title"
-        value={title}
-        onChangeText={setTitle}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Pick Description (optional)"
-        value={body}
-        onChangeText={setBody}
-        multiline
-        numberOfLines={4}
-      />
-      <View style={styles.switchContainer}>
-        <Text style={styles.label}>Premium Pick?</Text>
-        <Switch
-          value={isPremium}
-          onValueChange={setIsPremium}
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 110 : 0}
+    >
+      <ScrollView
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
+      >
+        <Text style={styles.title}>Post a New Pick</Text>
+
+        <TouchableOpacity onPress={pickMedia} style={styles.input}>
+          <Text>{mediaUri ? 'Change Media' : 'Add Image or Video'}</Text>
+        </TouchableOpacity>
+
+        {mediaUri && mediaType === 'image' && (
+          <Image source={{ uri: mediaUri }} style={{ width: '100%', height: 200, marginBottom: 15 }} />
+        )}
+
+        <TextInput
+          style={styles.input}
+          placeholder="Pick Title"
+          value={title}
+          onChangeText={setTitle}
+          returnKeyType="next"
         />
-      </View>
-      <View style={styles.buttonWrapper}>
-        <Button title="Post Pick" onPress={handlePostPick} color="#FFD700" />
-      </View>
-    </View>
+
+        <TextInput
+          style={styles.input}
+          placeholder="Pick Description (optional)"
+          value={body}
+          onChangeText={setBody}
+          multiline
+          numberOfLines={4}
+        />
+
+        <View style={styles.switchContainer}>
+          <Text style={styles.label}>Premium Pick?</Text>
+          <Switch value={isPremium} onValueChange={setIsPremium} />
+        </View>
+
+        <View style={styles.buttonWrapper}>
+          <Button title="Post Pick" onPress={handlePostPick} color="#FFD700" />
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     justifyContent: 'flex-start',
     padding: 20,
   },

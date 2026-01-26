@@ -105,13 +105,17 @@ export default function HomeScreen({ navigation }) {
   useLayoutEffect(() => {
     navigation.setOptions({
       headerLeft: () => (
-        <TouchableOpacity onPress={() => navigation.navigate('Profile')} style={{ marginLeft: 15 }}>
-          <Ionicons name="person-circle-outline" size={28} color="white" />
+        <TouchableOpacity
+          onPress={() => navigation.navigate('Profile')}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          style={{ marginLeft: 6 }}
+        >
+          <Ionicons name="person-circle-outline" size={30} color="white" />
         </TouchableOpacity>
       ),
       headerRight: () => (
         <TouchableOpacity onPress={handleLogout}>
-          <Text style={{ color: 'white', marginRight: 10, fontSize: 16 }}>
+          <Text style={{ color: 'white', marginRight: 9, fontSize: 16 }}>
             Logout
           </Text>
         </TouchableOpacity>

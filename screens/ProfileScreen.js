@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { getAuth, signOut } from 'firebase/auth';
-import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore';
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { getAuth, signOut, deleteUser } from 'firebase/auth';
+import { getFirestore, doc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { useNavigation } from '@react-navigation/native';
 import Purchases from 'react-native-purchases';
 
@@ -62,12 +62,68 @@ export default function ProfileScreen() {
     }
   };
 
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Delete account?',
+      'This will permanently delete your account and any stored data. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const user = auth.currentUser;
+              if (!user) {
+                alert('No user is currently signed in.');
+                return;
+              }
+
+              // Delete the user document from Firestore (must succeed)
+              const userRef = doc(firestore, 'users', user.uid);
+              await deleteDoc(userRef);
+
+              // Best-effort: log out RevenueCat user (optional)
+              try {
+                await Purchases.logOut();
+              } catch (e) {
+                // Ignore if not configured / already logged out
+              }
+
+              // Delete Firebase Auth user (may require recent login)
+              await deleteUser(user);
+
+              // Send back to login screen
+              navigation.reset({
+                index: 0,
+                routes: [{ name: 'Login' }],
+              });
+            } catch (error) {
+              console.error('Error deleting account:', error);
+
+              // Common case: Firebase requires recent authentication
+              const code = error?.code || '';
+              if (code === 'auth/requires-recent-login') {
+                alert('For security, please log out and log back in, then try deleting your account again.');
+              } else {
+                alert('Could not delete account. If this keeps happening, it\'s usually Firestore permissions/rules.');
+              }
+            }
+          },
+        },
+      ]
+    );
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.text}>Email: {userEmail}</Text>
       <Text style={styles.text}>Status: {premiumStatus}</Text>
       <TouchableOpacity onPress={handleLogout}>
         <Text style={{ color: 'blue', marginTop: 20 }}>Log Out</Text>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={handleDeleteAccount}>
+        <Text style={{ color: 'red', marginTop: 20 }}>Delete Account</Text>
       </TouchableOpacity>
       <TouchableOpacity
         onPress={async () => {
