@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { getAuth, signOut, deleteUser } from 'firebase/auth';
-import { getFirestore, doc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, updateDoc, deleteDoc, setDoc } from 'firebase/firestore';
 import { useNavigation } from '@react-navigation/native';
 import Purchases from 'react-native-purchases';
 
@@ -32,8 +32,10 @@ export default function ProfileScreen() {
 
     fetchUserInfo();
 
+    const rcUser = auth.currentUser;
     Purchases.configure({
       apiKey: 'appl_mieNuuRVDtnWaueMwwMXREAcLdt',
+      appUserID: rcUser?.uid,
     });
 
     const checkRevenueCat = async () => {
@@ -42,7 +44,7 @@ export default function ProfileScreen() {
         const user = auth.currentUser;
         if (user) {
           const userRef = doc(firestore, 'users', user.uid);
-          await updateDoc(userRef, { premium: true });
+          await setDoc(userRef, { premium: true }, { merge: true });
           setPremiumStatus('Premium User');
         }
       }
@@ -115,6 +117,38 @@ export default function ProfileScreen() {
     );
   };
 
+  const handleRestorePurchases = async () => {
+    try {
+      const user = auth.currentUser;
+      if (!user) {
+        alert('Please sign in first.');
+        return;
+      }
+
+      const customerInfo = await Purchases.restorePurchases();
+      const hasPro = !!customerInfo.entitlements.active['Joe Hawk Nation Pro'];
+
+      const userRef = doc(firestore, 'users', user.uid);
+
+      // Ensure the doc exists and update premium flag
+      await setDoc(
+        userRef,
+        { email: user.email ?? '', premium: hasPro },
+        { merge: true }
+      );
+
+      setPremiumStatus(hasPro ? 'Premium User' : 'Free User');
+      alert(
+        hasPro
+          ? 'Purchases restored — Premium unlocked!'
+          : 'No active purchases found for this Apple ID.'
+      );
+    } catch (e) {
+      console.warn('Restore purchases failed:', e);
+      alert('Could not restore purchases. Please try again.');
+    }
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.text}>Email: {userEmail}</Text>
@@ -124,6 +158,9 @@ export default function ProfileScreen() {
       </TouchableOpacity>
       <TouchableOpacity onPress={handleDeleteAccount}>
         <Text style={{ color: 'red', marginTop: 20 }}>Delete Account</Text>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={handleRestorePurchases}>
+        <Text style={{ color: 'purple', marginTop: 20 }}>Restore Purchases</Text>
       </TouchableOpacity>
       <TouchableOpacity
         onPress={async () => {
