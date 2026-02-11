@@ -3,7 +3,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useCallback } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, Image, Alert } from 'react-native';
 import { Video } from 'expo-av';
-import { doc, getDoc, collection, getDocs, deleteDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, getDocs, deleteDoc } from 'firebase/firestore';
 import { auth, db } from '../firebaseConfig';
 import { signOut } from 'firebase/auth';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,6 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 export default function HomeScreen({ navigation }) {
   const [picks, setPicks] = useState([]);
   const [isPremiumUser, setIsPremiumUser] = useState(false);
+  const [likedMap, setLikedMap] = useState({}); // { [pickId]: true/false }
   const user = auth.currentUser;
   const adminEmails = ['tmaxfinch6@gmail.com', 'joehawkNation@icloud.com'];
   const isAdmin = user && adminEmails.includes(user.email);
@@ -18,7 +19,7 @@ export default function HomeScreen({ navigation }) {
   const handleEdit = (post) => {
     const serializedPost = {
       ...post,
-      date: post.date?.toISOString?.() || null
+      date: post.date?.toISOString?.() || null,
     };
     navigation.navigate('EditPickScreen', { post: serializedPost });
   };
@@ -44,6 +45,69 @@ export default function HomeScreen({ navigation }) {
     }
   };
 
+  const loadLikesForPicks = async (picksList) => {
+    try {
+      const u = auth.currentUser;
+      if (!u || !Array.isArray(picksList) || picksList.length === 0) {
+        setLikedMap({});
+        return;
+      }
+
+      const pairs = await Promise.all(
+        picksList.map(async (p) => {
+          const likeRef = doc(db, 'picks', p.id, 'likes', u.uid);
+          const likeSnap = await getDoc(likeRef);
+          return [p.id, likeSnap.exists()];
+        })
+      );
+
+      const next = {};
+      for (const [pickId, liked] of pairs) {
+        next[pickId] = liked;
+      }
+      setLikedMap(next);
+    } catch (e) {
+      console.warn('Error loading likes:', e);
+    }
+  };
+
+  const handleToggleLike = async (pick) => {
+    const u = auth.currentUser;
+    if (!u) {
+      Alert.alert('Sign in required', 'Please sign in to like picks.');
+      return;
+    }
+
+    if (pick?.isPremium && !isPremiumUser) {
+      Alert.alert('Premium Pick', 'Upgrade to premium to like this pick.');
+      return;
+    }
+
+    const pickId = pick.id;
+    const currentlyLiked = !!likedMap[pickId];
+
+    // Optimistic UI
+    setLikedMap((prev) => ({ ...prev, [pickId]: !currentlyLiked }));
+
+    const likeRef = doc(db, 'picks', pickId, 'likes', u.uid);
+
+    try {
+      if (currentlyLiked) {
+        await deleteDoc(likeRef);
+      } else {
+        await setDoc(likeRef, {
+          userId: u.uid,
+          createdAt: new Date(),
+        });
+      }
+    } catch (e) {
+      // Roll back UI if the write failed
+      setLikedMap((prev) => ({ ...prev, [pickId]: currentlyLiked }));
+      console.warn('Error toggling like:', e);
+      Alert.alert('Error', 'Could not update like. Please try again.');
+    }
+  };
+
   useEffect(() => {
     const checkPremiumStatusAndFetchPicks = async () => {
       if (auth.currentUser) {
@@ -52,10 +116,10 @@ export default function HomeScreen({ navigation }) {
           const userDoc = await getDoc(docRef);
           if (userDoc.exists()) {
             const isPremium = userDoc.data().premium === true;
-            console.log("Fetched premium status:", isPremium);
+            console.log('Fetched premium status:', isPremium);
             setIsPremiumUser(isPremium);
           } else {
-            console.log("User doc not found");
+            console.log('User doc not found');
           }
         } catch (error) {
           console.error('Error fetching premium status:', error);
@@ -65,13 +129,14 @@ export default function HomeScreen({ navigation }) {
       try {
         const snapshot = await getDocs(collection(db, 'picks'));
         const data = snapshot.docs
-          .map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-            date: doc.data().date ? doc.data().date.toDate?.() || new Date(doc.data().date) : null,
+          .map((d) => ({
+            id: d.id,
+            ...d.data(),
+            date: d.data().date ? d.data().date.toDate?.() || new Date(d.data().date) : null,
           }))
           .sort((a, b) => (b.date && a.date ? b.date - a.date : 0));
         setPicks(data);
+        await loadLikesForPicks(data);
       } catch (error) {
         console.error('Error loading picks:', error);
       }
@@ -86,13 +151,14 @@ export default function HomeScreen({ navigation }) {
         try {
           const snapshot = await getDocs(collection(db, 'picks'));
           const data = snapshot.docs
-            .map((doc) => ({
-              id: doc.id,
-              ...doc.data(),
-              date: doc.data().date ? doc.data().date.toDate?.() || new Date(doc.data().date) : null,
+            .map((d) => ({
+              id: d.id,
+              ...d.data(),
+              date: d.data().date ? d.data().date.toDate?.() || new Date(d.data().date) : null,
             }))
             .sort((a, b) => (b.date && a.date ? b.date - a.date : 0));
           setPicks(data);
+          await loadLikesForPicks(data);
         } catch (error) {
           console.error('Error loading picks:', error);
         }
@@ -115,9 +181,7 @@ export default function HomeScreen({ navigation }) {
       ),
       headerRight: () => (
         <TouchableOpacity onPress={handleLogout}>
-          <Text style={{ color: 'white', marginRight: 9, fontSize: 16 }}>
-            Logout
-          </Text>
+          <Text style={{ color: 'white', marginRight: 9, fontSize: 16 }}>Logout</Text>
         </TouchableOpacity>
       ),
     });
@@ -146,7 +210,17 @@ export default function HomeScreen({ navigation }) {
                   useNativeControls
                 />
               ) : (item.mediaType === 'image' || !item.mediaType) && item.mediaUrl ? (
-                <View style={{ width: '100%', height: 200, borderRadius: 10, marginBottom: 8, backgroundColor: '#ccc', justifyContent: 'center', alignItems: 'center' }}>
+                <View
+                  style={{
+                    width: '100%',
+                    height: 200,
+                    borderRadius: 10,
+                    marginBottom: 8,
+                    backgroundColor: '#ccc',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                  }}
+                >
                   <Image
                     source={{ uri: item.mediaUrl }}
                     style={{ width: '100%', height: 200, borderRadius: 10 }}
@@ -159,13 +233,11 @@ export default function HomeScreen({ navigation }) {
               ) : null
             ) : null}
             <View style={styles.pickFooter}>
-              <Text style={styles.pickDate}>
-                {item.date ? new Date(item.date).toLocaleDateString() : ''}
-              </Text>
+              <Text style={styles.pickDate}>{item.date ? new Date(item.date).toLocaleDateString() : ''}</Text>
 
               <View style={styles.footerButtons}>
-                <TouchableOpacity style={styles.likeButton}>
-                  <Text style={styles.likeButtonText}>👍 Like</Text>
+                <TouchableOpacity style={styles.likeButton} onPress={() => handleToggleLike(item)}>
+                  <Text style={styles.likeButtonText}>{likedMap[item.id] ? '👍 Liked' : '👍 Like'}</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity

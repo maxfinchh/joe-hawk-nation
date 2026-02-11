@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, Linking } from 'react-native';
 import { getAuth, signOut, deleteUser } from 'firebase/auth';
 import { getFirestore, doc, getDoc, updateDoc, deleteDoc, setDoc } from 'firebase/firestore';
 import { useNavigation } from '@react-navigation/native';
@@ -12,6 +12,22 @@ export default function ProfileScreen() {
 
   const [userEmail, setUserEmail] = useState('');
   const [premiumStatus, setPremiumStatus] = useState(null);
+
+  const PRIVACY_POLICY_URL = 'https://app.termly.io/dashboard/website/b199056e-e8fd-4ec9-9064-29a431a2c10b/privacy-policy';
+
+  const handleOpenPrivacyPolicy = async () => {
+    try {
+      const supported = await Linking.canOpenURL(PRIVACY_POLICY_URL);
+      if (!supported) {
+        Alert.alert('Cannot open link', 'Your device could not open the Privacy Policy link.');
+        return;
+      }
+      await Linking.openURL(PRIVACY_POLICY_URL);
+    } catch (e) {
+      console.warn('Failed to open privacy policy:', e);
+      Alert.alert('Error', 'Could not open the Privacy Policy. Please try again.');
+    }
+  };
 
   useEffect(() => {
     const fetchUserInfo = async () => {
@@ -161,6 +177,9 @@ export default function ProfileScreen() {
       </TouchableOpacity>
       <TouchableOpacity onPress={handleRestorePurchases}>
         <Text style={{ color: 'purple', marginTop: 20 }}>Restore Purchases</Text>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={handleOpenPrivacyPolicy}>
+        <Text style={{ color: 'blue', marginTop: 20 }}>Privacy Policy</Text>
       </TouchableOpacity>
       <TouchableOpacity
         onPress={async () => {
