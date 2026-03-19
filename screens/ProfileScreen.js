@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, Linking } from 'react-native';
 import { getAuth, signOut, deleteUser } from 'firebase/auth';
-import { getFirestore, doc, getDoc, updateDoc, deleteDoc, setDoc } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, deleteDoc, setDoc } from 'firebase/firestore';
 import { useNavigation } from '@react-navigation/native';
 import Purchases from 'react-native-purchases';
 
@@ -165,6 +165,72 @@ export default function ProfileScreen() {
     }
   };
 
+  const handleUpgradeToPremium = async () => {
+    try {
+      const user = auth.currentUser;
+      if (!user) {
+        Alert.alert('Sign in required', 'Please sign in before upgrading to premium.');
+        return;
+      }
+
+      // First check Firestore premium flag
+      const userRef = doc(firestore, 'users', user.uid);
+      const userSnap = await getDoc(userRef);
+      const firestorePremium = userSnap.exists() && userSnap.data()?.premium === true;
+
+      // Also check RevenueCat entitlement directly
+      const customerInfo = await Purchases.getCustomerInfo();
+      const hasEntitlement = !!customerInfo.entitlements.active['Joe Hawk Nation Pro'];
+
+      if (firestorePremium || hasEntitlement) {
+        await setDoc(userRef, { email: user.email ?? '', premium: true }, { merge: true });
+        setPremiumStatus('Premium User');
+        Alert.alert('Already Premium', 'You already have Joe Hawk Premium.');
+        return;
+      }
+
+      const offerings = await Purchases.getOfferings();
+      const offering = offerings.current;
+
+      if (!offering || offering.availablePackages.length === 0) {
+        Alert.alert('Purchase Unavailable', 'No premium purchase package is currently available.');
+        return;
+      }
+
+      const purchaseResult = await Purchases.purchasePackage(offering.availablePackages[0]);
+      const updatedCustomerInfo = purchaseResult?.customerInfo ?? purchaseResult;
+      const nowHasPro = !!updatedCustomerInfo?.entitlements?.active?.['Joe Hawk Nation Pro'];
+
+      if (nowHasPro) {
+        await setDoc(
+          userRef,
+          { email: user.email ?? '', premium: true },
+          { merge: true }
+        );
+        setPremiumStatus('Premium User');
+        Alert.alert('Success', 'Upgraded to Premium!');
+      } else {
+        Alert.alert(
+          'Purchase Completed',
+          'Your purchase finished, but premium was not unlocked yet. Please tap Restore Purchases.'
+        );
+      }
+    } catch (e) {
+      if (!e?.userCancelled) {
+        console.warn('Purchase failed:', e);
+
+        const message = String(e?.message || '').toLowerCase();
+        const code = String(e?.code || '').toLowerCase();
+
+        if (message.includes('already') || code.includes('already')) {
+          Alert.alert('Already Premium', 'You already purchased Joe Hawk Premium. Try Restore Purchases if needed.');
+        } else {
+          Alert.alert('Purchase Error', 'Something went wrong during purchase. Please try again or tap Restore Purchases.');
+        }
+      }
+    }
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.text}>Email: {userEmail}</Text>
@@ -181,33 +247,7 @@ export default function ProfileScreen() {
       <TouchableOpacity onPress={handleOpenPrivacyPolicy}>
         <Text style={{ color: 'blue', marginTop: 20 }}>Privacy Policy</Text>
       </TouchableOpacity>
-      <TouchableOpacity
-        onPress={async () => {
-          try {
-            const offerings = await Purchases.getOfferings();
-            const offering = offerings.current;
-
-            if (offering && offering.availablePackages.length > 0) {
-              const purchase = await Purchases.purchasePackage(offering.availablePackages[0]);
-
-              const user = auth.currentUser;
-              if (user) {
-                const userRef = doc(firestore, 'users', user.uid);
-                await updateDoc(userRef, { premium: true });
-                setPremiumStatus('Premium User');
-                alert('Upgraded to Premium!');
-              }
-            } else {
-              alert('No available purchase packages');
-            }
-          } catch (e) {
-            if (!e.userCancelled) {
-              console.warn('Purchase failed:', e);
-              alert('Something went wrong during purchase');
-            }
-          }
-        }}
-      >
+      <TouchableOpacity onPress={handleUpgradeToPremium}>
         <Text style={{ color: 'green', marginTop: 20 }}>Upgrade to Premium</Text>
       </TouchableOpacity>
     </View>
