@@ -14,6 +14,7 @@ export default function ProfileScreen() {
   const [premiumStatus, setPremiumStatus] = useState(null);
 
   const PRIVACY_POLICY_URL = 'https://app.termly.io/dashboard/website/b199056e-e8fd-4ec9-9064-29a431a2c10b/privacy-policy';
+  const PREMIUM_ENTITLEMENT_ID = 'Single Purchase';
 
   const handleOpenPrivacyPolicy = async () => {
     try {
@@ -56,7 +57,7 @@ export default function ProfileScreen() {
 
     const checkRevenueCat = async () => {
       const purchaserInfo = await Purchases.getCustomerInfo();
-      if (purchaserInfo.entitlements.active['Joe Hawk Nation Pro']) {
+      if (purchaserInfo.entitlements.active[PREMIUM_ENTITLEMENT_ID]) {
         const user = auth.currentUser;
         if (user) {
           const userRef = doc(firestore, 'users', user.uid);
@@ -142,7 +143,7 @@ export default function ProfileScreen() {
       }
 
       const customerInfo = await Purchases.restorePurchases();
-      const hasPro = !!customerInfo.entitlements.active['Joe Hawk Nation Pro'];
+      const hasPro = !!customerInfo.entitlements.active[PREMIUM_ENTITLEMENT_ID];
 
       const userRef = doc(firestore, 'users', user.uid);
 
@@ -161,7 +162,15 @@ export default function ProfileScreen() {
       );
     } catch (e) {
       console.warn('Restore purchases failed:', e);
-      alert('Could not restore purchases. Please try again.');
+
+      const message = String(e?.message || '').toLowerCase();
+      const code = String(e?.code || '').toLowerCase();
+
+      if (message.includes('network') || code.includes('network')) {
+        Alert.alert('Restore Failed', 'Network issue while restoring purchases. Please try again.');
+      } else {
+        Alert.alert('Restore Failed', 'Could not restore purchases. Please try again.');
+      }
     }
   };
 
@@ -180,7 +189,7 @@ export default function ProfileScreen() {
 
       // Also check RevenueCat entitlement directly
       const customerInfo = await Purchases.getCustomerInfo();
-      const hasEntitlement = !!customerInfo.entitlements.active['Joe Hawk Nation Pro'];
+      const hasEntitlement = !!customerInfo.entitlements.active[PREMIUM_ENTITLEMENT_ID];
 
       if (firestorePremium || hasEntitlement) {
         await setDoc(userRef, { email: user.email ?? '', premium: true }, { merge: true });
@@ -193,13 +202,13 @@ export default function ProfileScreen() {
       const offering = offerings.current;
 
       if (!offering || offering.availablePackages.length === 0) {
-        Alert.alert('Purchase Unavailable', 'No premium purchase package is currently available.');
+        Alert.alert('Purchase Unavailable', 'RevenueCat does not have a current premium package configured yet.');
         return;
       }
 
       const purchaseResult = await Purchases.purchasePackage(offering.availablePackages[0]);
       const updatedCustomerInfo = purchaseResult?.customerInfo ?? purchaseResult;
-      const nowHasPro = !!updatedCustomerInfo?.entitlements?.active?.['Joe Hawk Nation Pro'];
+      const nowHasPro = !!updatedCustomerInfo?.entitlements?.active?.[PREMIUM_ENTITLEMENT_ID];
 
       if (nowHasPro) {
         await setDoc(
@@ -224,8 +233,12 @@ export default function ProfileScreen() {
 
         if (message.includes('already') || code.includes('already')) {
           Alert.alert('Already Premium', 'You already purchased Joe Hawk Premium. Try Restore Purchases if needed.');
+        } else if (message.includes('not available') || message.includes('product') || code.includes('product')) {
+          Alert.alert('Purchase Error', 'The premium product is not configured correctly yet in App Store Connect or RevenueCat.');
+        } else if (message.includes('network') || code.includes('network')) {
+          Alert.alert('Purchase Error', 'Network issue during purchase. Please try again.');
         } else {
-          Alert.alert('Purchase Error', 'Something went wrong during purchase. Please try again or tap Restore Purchases.');
+          Alert.alert('Purchase Error', 'Purchase failed. If this keeps happening, the RevenueCat entitlement/offering setup is probably incomplete.');
         }
       }
     }
