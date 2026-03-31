@@ -13,20 +13,22 @@ export default function ProfileScreen() {
   const [userEmail, setUserEmail] = useState('');
   const [premiumStatus, setPremiumStatus] = useState(null);
 
-  const PRIVACY_POLICY_URL = 'https://app.termly.io/dashboard/website/b199056e-e8fd-4ec9-9064-29a431a2c10b/privacy-policy';
+  const PRIVACY_POLICY_URL = 'https://maxfinchh.github.io/joe-hawk-nation/privacy.html';
+  const TERMS_URL = 'https://maxfinchh.github.io/joe-hawk-nation/terms.html';
+  const GUIDELINES_URL = 'https://maxfinchh.github.io/joe-hawk-nation/guidelines.html';
   const PREMIUM_ENTITLEMENT_ID = 'Single Purchase';
 
-  const handleOpenPrivacyPolicy = async () => {
+  const handleOpenLink = async (url, label) => {
     try {
-      const supported = await Linking.canOpenURL(PRIVACY_POLICY_URL);
+      const supported = await Linking.canOpenURL(url);
       if (!supported) {
-        Alert.alert('Cannot open link', 'Your device could not open the Privacy Policy link.');
+        Alert.alert('Cannot open link', `Your device could not open the ${label} link.`);
         return;
       }
-      await Linking.openURL(PRIVACY_POLICY_URL);
+      await Linking.openURL(url);
     } catch (e) {
-      console.warn('Failed to open privacy policy:', e);
-      Alert.alert('Error', 'Could not open the Privacy Policy. Please try again.');
+      console.warn(`Failed to open ${label.toLowerCase()}:`, e);
+      Alert.alert('Error', `Could not open the ${label}. Please try again.`);
     }
   };
 
@@ -257,8 +259,14 @@ export default function ProfileScreen() {
       <TouchableOpacity onPress={handleRestorePurchases}>
         <Text style={{ color: 'purple', marginTop: 20 }}>Restore Purchases</Text>
       </TouchableOpacity>
-      <TouchableOpacity onPress={handleOpenPrivacyPolicy}>
+      <TouchableOpacity onPress={() => handleOpenLink(PRIVACY_POLICY_URL, 'Privacy Policy')}>
         <Text style={{ color: 'blue', marginTop: 20 }}>Privacy Policy</Text>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={() => handleOpenLink(TERMS_URL, 'Terms of Service')}>
+        <Text style={{ color: 'blue', marginTop: 20 }}>Terms of Service</Text>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={() => handleOpenLink(GUIDELINES_URL, 'Community Guidelines')}>
+        <Text style={{ color: 'blue', marginTop: 20 }}>Community Guidelines</Text>
       </TouchableOpacity>
       <TouchableOpacity onPress={handleUpgradeToPremium}>
         <Text style={{ color: 'green', marginTop: 20 }}>Upgrade to Premium</Text>

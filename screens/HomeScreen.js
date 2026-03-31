@@ -45,6 +45,25 @@ export default function HomeScreen({ navigation }) {
     }
   };
 
+  const refreshPremiumStatus = async () => {
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      setIsPremiumUser(false);
+      return false;
+    }
+
+    try {
+      const userRef = doc(db, 'users', currentUser.uid);
+      const userSnap = await getDoc(userRef);
+      const isPremium = userSnap.exists() && userSnap.data()?.premium === true;
+      setIsPremiumUser(isPremium);
+      return isPremium;
+    } catch (error) {
+      console.error('Error refreshing premium status:', error);
+      return false;
+    }
+  };
+
   const loadLikesForPicks = async (picksList) => {
     try {
       const u = auth.currentUser;
@@ -110,21 +129,7 @@ export default function HomeScreen({ navigation }) {
 
   useEffect(() => {
     const checkPremiumStatusAndFetchPicks = async () => {
-      if (auth.currentUser) {
-        try {
-          const docRef = doc(db, 'users', auth.currentUser.uid);
-          const userDoc = await getDoc(docRef);
-          if (userDoc.exists()) {
-            const isPremium = userDoc.data().premium === true;
-            console.log('Fetched premium status:', isPremium);
-            setIsPremiumUser(isPremium);
-          } else {
-            console.log('User doc not found');
-          }
-        } catch (error) {
-          console.error('Error fetching premium status:', error);
-        }
-      }
+      await refreshPremiumStatus();
 
       try {
         const snapshot = await getDocs(collection(db, 'picks'));
@@ -148,6 +153,8 @@ export default function HomeScreen({ navigation }) {
   useFocusEffect(
     useCallback(() => {
       const fetchPicks = async () => {
+        await refreshPremiumStatus();
+
         try {
           const snapshot = await getDocs(collection(db, 'picks'));
           const data = snapshot.docs
