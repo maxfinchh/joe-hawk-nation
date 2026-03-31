@@ -1,63 +1,62 @@
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Joe Hawk Nation Privacy Policy</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; line-height: 1.6; color: #222; }
+    h1, h2 { color: #111; }
+  </style>
+</head>
+<body>
+  <h1>Privacy Policy for Joe Hawk Nation</h1>
+  <p>Last updated: March 31, 2026</p>
 
-    function signedIn() {
-      return request.auth != null;
-    }
+  <p>Joe Hawk Nation values your privacy. This Privacy Policy explains what information we collect, how we use it, and the choices available to you when you use our mobile application.</p>
 
-    function isAdmin() {
-      return signedIn()
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
-    }
+  <h2>Information We Collect</h2>
+  <p>We may collect the following information:</p>
+  <ul>
+    <li>Email address and account login information</li>
+    <li>User ID and account status</li>
+    <li>Comments, likes, reports, blocked-user preferences, and other content you submit in the app</li>
+    <li>Purchase and premium-access status</li>
+    <li>Basic technical and usage information needed to operate the app</li>
+  </ul>
 
-    match /users/{userId} {
-      allow read: if signedIn() && userId == request.auth.uid;
-      allow create: if signedIn() && userId == request.auth.uid;
-      allow update: if signedIn() && userId == request.auth.uid;
-      allow delete: if signedIn() && userId == request.auth.uid;
+  <h2>How We Use Information</h2>
+  <ul>
+    <li>To create and manage user accounts</li>
+    <li>To provide access to app features, including premium content</li>
+    <li>To process and restore purchases</li>
+    <li>To moderate content, review reports, and help keep the app safe</li>
+    <li>To improve app functionality and user experience</li>
+    <li>To respond to support or account-related requests</li>
+  </ul>
 
-      match /blockedUsers/{blockedUserId} {
-        allow read, create, delete: if signedIn() && request.auth.uid == userId;
-        allow update: if false;
-      }
-    }
+  <h2>Third-Party Services</h2>
+  <p>We use third-party services to operate the app, including Firebase for authentication and database services, RevenueCat for purchase management, and Apple for in-app purchases.</p>
 
-    match /reports/{reportId} {
-      allow create: if signedIn()
-        && request.resource.data.reporterId == request.auth.uid
-        && request.resource.data.type == 'comment'
-        && request.resource.data.reason is string
-        && request.resource.data.reason.size() > 0
-        && request.resource.data.reason.size() <= 100;
+  <h2>Purchases</h2>
+  <p>Premium purchases are processed by Apple through in-app purchases. We do not collect or store your full payment card information.</p>
 
-      allow read, update, delete: if isAdmin();
-    }
+  <h2>User Content and Moderation</h2>
+  <p>If you post comments or other content in the app, that information may be visible to other users. We may review reported content and remove content or accounts that violate our rules.</p>
 
-    match /picks/{pickId} {
-      allow read: if true;
-      allow create, update, delete: if isAdmin();
+  <h2>Account Deletion</h2>
+  <p>You may request deletion of your account from within the app. When your account is deleted, we will delete or anonymize associated data as required for app operation, security, legal compliance, or legitimate business purposes.</p>
 
-      match /comments/{commentId} {
-        allow read: if true;
+  <h2>Data Retention</h2>
+  <p>We retain information for as long as necessary to provide the app, comply with legal obligations, resolve disputes, and enforce our policies.</p>
 
-        allow create: if signedIn()
-          && request.resource.data.authorId == request.auth.uid
-          && request.resource.data.text is string
-          && request.resource.data.text.size() > 0
-          && request.resource.data.text.size() <= 500;
+  <h2>Your Rights</h2>
+  <p>Depending on your location, you may have rights to access, correct, delete, or request information about your personal data.</p>
 
-        allow delete: if signedIn()
-          && (resource.data.authorId == request.auth.uid || isAdmin());
+  <h2>Children’s Privacy</h2>
+  <p>Joe Hawk Nation is not directed to children under 13, and we do not knowingly collect personal information from children under 13.</p>
 
-        allow update: if false;
-      }
-
-      match /likes/{userId} {
-        allow read: if true;
-        allow create, delete: if signedIn() && request.auth.uid == userId;
-        allow update: if false;
-      }
-    }
-  }
-}
+  <h2>Contact</h2>
+  <p>If you have questions about this Privacy Policy, contact: tmaxfinch6@gmail.com</p>
+</body>
+</html>
