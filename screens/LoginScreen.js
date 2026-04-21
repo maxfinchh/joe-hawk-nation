@@ -5,7 +5,7 @@ import { signInWithEmailAndPassword } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { ImageBackground } from 'react-native';
-import bgImage from '../assets/joehawkbg.png';
+import bgImage from '../assets/newhawklis.png';
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
@@ -36,10 +36,11 @@ export default function LoginScreen({ navigation }) {
     <ImageBackground
       source={bgImage}
       style={styles.background}
+      imageStyle={{ transform: [{ translateY: -10 }] }}
       resizeMode="cover"
     >
       <View style={styles.container}>
-        <Text style={styles.title}>Joe Hawk Nation Login</Text>
+        <Text style={styles.title}>Hawk Nation Login</Text>
         <TextInput
           style={styles.input}
           placeholder="Email"
@@ -66,6 +67,7 @@ export default function LoginScreen({ navigation }) {
 const styles = StyleSheet.create({
   background: {
     flex: 1,
+    backgroundColor: 'black', // fills bottom gap so no white shows
   },
   container: {
     flex: 1,

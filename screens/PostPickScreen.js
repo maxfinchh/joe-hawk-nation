@@ -36,7 +36,7 @@ export default function PostPickScreen({ navigation, route }) {
 
   const handlePostPick = async () => {
     if (!title.trim()) {
-      Alert.alert('Missing Title', 'Please enter a pick title.');
+      Alert.alert('Missing Title', 'Please enter a post title.');
       return;
     }
     try {
@@ -69,7 +69,7 @@ export default function PostPickScreen({ navigation, route }) {
           updateData.mediaType = mediaType;
         }
         await updateDoc(postRef, updateData);
-        Alert.alert('Success', 'Pick updated!');
+        Alert.alert('Success', 'Post updated!');
       } else {
         await addDoc(collection(db, 'picks'), {
           title,
@@ -79,12 +79,12 @@ export default function PostPickScreen({ navigation, route }) {
           mediaUrl,
           mediaType,
         });
-        Alert.alert('Success', 'Pick posted!');
+        Alert.alert('Success', 'Posted!');
       }
       navigation.navigate('Home');
     } catch (error) {
-      console.error('Error posting/updating pick:', error);
-      Alert.alert('Error', 'Could not post or update pick.');
+      console.error('Error posting/updating:', error);
+      Alert.alert('Error', 'Could not post or update.');
     }
   };
 
@@ -98,7 +98,7 @@ export default function PostPickScreen({ navigation, route }) {
         contentContainerStyle={styles.container}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={styles.title}>Post a New Pick</Text>
+        <Text style={styles.title}>New Post</Text>
 
         <TouchableOpacity onPress={pickMedia} style={styles.input}>
           <Text>{mediaUri ? 'Change Media' : 'Add Image or Video'}</Text>
@@ -110,7 +110,7 @@ export default function PostPickScreen({ navigation, route }) {
 
         <TextInput
           style={styles.input}
-          placeholder="Pick Title"
+          placeholder="Post Title"
           value={title}
           onChangeText={setTitle}
           returnKeyType="next"
@@ -118,7 +118,7 @@ export default function PostPickScreen({ navigation, route }) {
 
         <TextInput
           style={styles.input}
-          placeholder="Pick Description (optional)"
+          placeholder="Post Description (optional)"
           value={body}
           onChangeText={setBody}
           multiline
@@ -126,12 +126,12 @@ export default function PostPickScreen({ navigation, route }) {
         />
 
         <View style={styles.switchContainer}>
-          <Text style={styles.label}>Premium Pick?</Text>
+          <Text style={styles.label}>Premium Post?</Text>
           <Switch value={isPremium} onValueChange={setIsPremium} />
         </View>
 
         <View style={styles.buttonWrapper}>
-          <Button title="Post Pick" onPress={handlePostPick} color="#FFD700" />
+          <Button title="Post" onPress={handlePostPick} color="#FFD700" />
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

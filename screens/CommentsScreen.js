@@ -147,7 +147,7 @@ export default function CommentsScreen({ route, navigation }) {
         text: trimmed,
         date: serverTimestamp(),
         authorId: user.uid,
-        authorLabel: isAdmin ? 'Joe Hawk' : 'Anonymous',
+        authorLabel: isAdmin ? 'Admin' : 'Anonymous',
       });
       setText('');
     } catch (err) {

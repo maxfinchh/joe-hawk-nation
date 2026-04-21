@@ -98,7 +98,7 @@ export default function HomeScreen({ navigation }) {
     }
 
     if (pick?.isPremium && !isPremiumUser) {
-      Alert.alert('Premium Pick', 'Upgrade to premium to like this pick.');
+      Alert.alert('Premium Post', 'Upgrade to premium to like this post.');
       return;
     }
 
@@ -196,7 +196,7 @@ export default function HomeScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Joe's Picks</Text>
+      <Text style={styles.title}>New Posts</Text>
       <FlatList
         data={picks}
         keyExtractor={(item) => item.id}
@@ -251,7 +251,7 @@ export default function HomeScreen({ navigation }) {
                   style={styles.commentsButton}
                   onPress={() => {
                     if (item.isPremium && !isPremiumUser) {
-                      Alert.alert('Premium Pick', 'Upgrade to premium to view and comment on this pick.');
+                      Alert.alert('Premium Post', 'Upgrade to premium to view and comment on this post.');
                       return;
                     }
                     navigation.navigate('Comments', {
@@ -280,7 +280,7 @@ export default function HomeScreen({ navigation }) {
       {isAdmin && (
         <View style={{ marginBottom: 30 }}>
           <TouchableOpacity style={styles.postButton} onPress={() => navigation.navigate('PostPick')}>
-            <Text style={styles.postButtonText}>Post a Pick</Text>
+            <Text style={styles.postButtonText}>Post</Text>
           </TouchableOpacity>
         </View>
       )}
