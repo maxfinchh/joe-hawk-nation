@@ -1,16 +1,16 @@
 {
   "expo": {
-    "name": "joe-hawk-nation",
-    "slug": "joe-hawk-nation",
+    "name": "Hawk Nation",
+    "slug": "hawk-nation",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/HAWK2.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/newhawklis.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#000000"
     },
     "ios": {
       "supportsTablet": true,

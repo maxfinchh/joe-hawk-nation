@@ -24,8 +24,8 @@ export default function PostPickScreen({ navigation, route }) {
 
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.All,
-      allowsEditing: true,
-      quality: 0.7,
+      allowsEditing: false,
+      quality: 0.9,
     });
 
     if (!result.canceled && result.assets.length > 0) {
@@ -100,12 +100,16 @@ export default function PostPickScreen({ navigation, route }) {
       >
         <Text style={styles.title}>New Post</Text>
 
-        <TouchableOpacity onPress={pickMedia} style={styles.input}>
+        <TouchableOpacity onPress={pickMedia} style={styles.mediaPickerButton}>
           <Text>{mediaUri ? 'Change Media' : 'Add Image or Video'}</Text>
         </TouchableOpacity>
 
         {mediaUri && mediaType === 'image' && (
-          <Image source={{ uri: mediaUri }} style={{ width: '100%', height: 200, marginBottom: 15 }} />
+          <Image
+            source={{ uri: mediaUri }}
+            style={{ width: '100%', height: 320, marginBottom: 15, borderRadius: 8 }}
+            resizeMode="contain"
+          />
         )}
 
         <TextInput
@@ -149,6 +153,16 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     textAlign: 'center',
     fontWeight: 'bold',
+  },
+  mediaPickerButton: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    backgroundColor: 'white',
+    marginBottom: 15,
+    padding: 16,
+    borderRadius: 8,
+    minHeight: 60,
+    justifyContent: 'center',
   },
   input: {
     borderWidth: 1,

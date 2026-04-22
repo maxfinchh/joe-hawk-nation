@@ -1,10 +1,9 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import Purchases from 'react-native-purchases';
-import { useEffect } from 'react';
-import { Platform } from 'react-native';
+import { Platform, ActivityIndicator, View } from 'react-native';
 
 import LoginScreen from './screens/LoginScreen';
 import HomeScreen from './screens/HomeScreen';
@@ -14,9 +13,15 @@ import EditPickScreen from './screens/EditPickScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import CommentsScreen from './screens/CommentsScreen';
 
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from './firebaseConfig';
+
 const Stack = createNativeStackNavigator();
 
 export default function App() {
+  const [initializing, setInitializing] = useState(true);
+  const [user, setUser] = useState(null);
+
   useEffect(() => {
     Purchases.configure({
       apiKey: Platform.select({
@@ -24,10 +29,29 @@ export default function App() {
       }),
     });
   }, []);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      if (initializing) {
+        setInitializing(false);
+      }
+    });
+
+    return unsubscribe;
+  }, [initializing]);
+
+  if (initializing) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#24160B' }}>
+        <ActivityIndicator size="large" color="#fff" />
+      </View>
+    );
+  }
   return (
     <NavigationContainer>
       <Stack.Navigator
-        initialRouteName="Login"
+        initialRouteName={user ? 'Home' : 'Login'}
         screenOptions={{
           headerStyle: {
             backgroundColor: '#24160B', // brown

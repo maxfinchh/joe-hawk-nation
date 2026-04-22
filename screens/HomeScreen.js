@@ -12,9 +12,8 @@ export default function HomeScreen({ navigation }) {
   const [picks, setPicks] = useState([]);
   const [isPremiumUser, setIsPremiumUser] = useState(false);
   const [likedMap, setLikedMap] = useState({}); // { [pickId]: true/false }
+  const [isAdmin, setIsAdmin] = useState(false);
   const user = auth.currentUser;
-  const adminEmails = ['tmaxfinch6@gmail.com', 'joehawkNation@icloud.com'];
-  const isAdmin = user && adminEmails.includes(user.email);
 
   const handleEdit = (post) => {
     const serializedPost = {
@@ -45,22 +44,37 @@ export default function HomeScreen({ navigation }) {
     }
   };
 
-  const refreshPremiumStatus = async () => {
+  const refreshUserStatus = async () => {
     const currentUser = auth.currentUser;
     if (!currentUser) {
       setIsPremiumUser(false);
-      return false;
+      setIsAdmin(false);
+      return { isPremium: false, isAdmin: false };
     }
 
     try {
       const userRef = doc(db, 'users', currentUser.uid);
       const userSnap = await getDoc(userRef);
-      const isPremium = userSnap.exists() && userSnap.data()?.premium === true;
+
+      if (!userSnap.exists()) {
+        setIsPremiumUser(false);
+        setIsAdmin(false);
+        return { isPremium: false, isAdmin: false };
+      }
+
+      const data = userSnap.data();
+      const isPremium = data?.premium === true;
+      const admin = data?.isAdmin === true;
+
       setIsPremiumUser(isPremium);
-      return isPremium;
+      setIsAdmin(admin);
+
+      return { isPremium, isAdmin: admin };
     } catch (error) {
-      console.error('Error refreshing premium status:', error);
-      return false;
+      console.error('Error refreshing user status:', error);
+      setIsPremiumUser(false);
+      setIsAdmin(false);
+      return { isPremium: false, isAdmin: false };
     }
   };
 
@@ -129,7 +143,7 @@ export default function HomeScreen({ navigation }) {
 
   useEffect(() => {
     const checkPremiumStatusAndFetchPicks = async () => {
-      await refreshPremiumStatus();
+      await refreshUserStatus();
 
       try {
         const snapshot = await getDocs(collection(db, 'picks'));
@@ -153,7 +167,7 @@ export default function HomeScreen({ navigation }) {
   useFocusEffect(
     useCallback(() => {
       const fetchPicks = async () => {
-        await refreshPremiumStatus();
+        await refreshUserStatus();
 
         try {
           const snapshot = await getDocs(collection(db, 'picks'));
@@ -220,18 +234,19 @@ export default function HomeScreen({ navigation }) {
                 <View
                   style={{
                     width: '100%',
-                    height: 200,
+                    minHeight: 260,
                     borderRadius: 10,
                     marginBottom: 8,
-                    backgroundColor: '#ccc',
+                    backgroundColor: '#fff',
                     justifyContent: 'center',
                     alignItems: 'center',
+                    overflow: 'hidden',
                   }}
                 >
                   <Image
                     source={{ uri: item.mediaUrl }}
-                    style={{ width: '100%', height: 200, borderRadius: 10 }}
-                    resizeMode="cover"
+                    style={{ width: '100%', height: 320, borderRadius: 10 }}
+                    resizeMode="contain"
                     onError={(e) => {
                       console.warn('Image load error:', e.nativeEvent.error);
                     }}
