@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Switch, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import React, { useLayoutEffect, useState } from 'react';
+import { View, Text, TextInput, StyleSheet, Switch, Alert, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import { Video } from 'expo-av';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage, db } from '../firebaseConfig';
 import { Image, TouchableOpacity } from 'react-native';
@@ -14,6 +15,13 @@ export default function PostPickScreen({ navigation, route }) {
 
   const [mediaUri, setMediaUri] = useState(null);
   const [mediaType, setMediaType] = useState(null); // 'image' or 'video'
+  const [isPosting, setIsPosting] = useState(false);
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      title: editingPost ? 'Edit Post' : 'Post',
+    });
+  }, [navigation, editingPost]);
 
   const pickMedia = async () => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -35,10 +43,15 @@ export default function PostPickScreen({ navigation, route }) {
   };
 
   const handlePostPick = async () => {
+    if (isPosting) return;
+
     if (!title.trim()) {
       Alert.alert('Missing Title', 'Please enter a post title.');
       return;
     }
+
+    setIsPosting(true);
+
     try {
       let mediaUrl = null;
       if (mediaUri) {
@@ -53,6 +66,7 @@ export default function PostPickScreen({ navigation, route }) {
         } catch (uploadError) {
           console.error('Media upload error:', uploadError);
           Alert.alert('Error', 'Failed to upload media.');
+          setIsPosting(false);
           return;
         }
       }
@@ -85,6 +99,8 @@ export default function PostPickScreen({ navigation, route }) {
     } catch (error) {
       console.error('Error posting/updating:', error);
       Alert.alert('Error', 'Could not post or update.');
+    } finally {
+      setIsPosting(false);
     }
   };
 
@@ -100,7 +116,7 @@ export default function PostPickScreen({ navigation, route }) {
       >
         <Text style={styles.title}>New Post</Text>
 
-        <TouchableOpacity onPress={pickMedia} style={styles.mediaPickerButton}>
+        <TouchableOpacity onPress={pickMedia} style={styles.mediaPickerButton} disabled={isPosting}>
           <Text>{mediaUri ? 'Change Media' : 'Add Image or Video'}</Text>
         </TouchableOpacity>
 
@@ -110,6 +126,21 @@ export default function PostPickScreen({ navigation, route }) {
             style={{ width: '100%', height: 320, marginBottom: 15, borderRadius: 8 }}
             resizeMode="contain"
           />
+        )}
+
+        {mediaUri && mediaType === 'video' && (
+          <View style={styles.videoPreviewWrap}>
+            <Video
+              source={{ uri: mediaUri }}
+              style={styles.videoPreview}
+              resizeMode="cover"
+              useNativeControls
+              shouldPlay={false}
+            />
+            <View pointerEvents="none" style={styles.videoPlayBadge}>
+              <Text style={styles.videoPlayIcon}>▶</Text>
+            </View>
+          </View>
         )}
 
         <TextInput
@@ -135,7 +166,16 @@ export default function PostPickScreen({ navigation, route }) {
         </View>
 
         <View style={styles.buttonWrapper}>
-          <Button title="Post" onPress={handlePostPick} color="#FFD700" />
+          {isPosting ? (
+            <View style={styles.loadingRow}>
+              <ActivityIndicator size="small" color="#24160B" />
+              <Text style={styles.loadingText}>{editingPost ? 'Updating post...' : 'Posting...'}</Text>
+            </View>
+          ) : (
+            <TouchableOpacity style={styles.submitButton} onPress={handlePostPick}>
+              <Text style={styles.submitButtonText}>{editingPost ? 'Update Post' : 'Post'}</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -164,6 +204,42 @@ const styles = StyleSheet.create({
     minHeight: 60,
     justifyContent: 'center',
   },
+  videoPreviewWrap: {
+    width: '100%',
+    aspectRatio: 9 / 16,
+    maxHeight: 520,
+    borderRadius: 18,
+    marginBottom: 15,
+    backgroundColor: '#000',
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
+    alignSelf: 'center',
+  },
+  videoPreview: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 18,
+  },
+  videoPlayBadge: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    width: 64,
+    height: 64,
+    marginLeft: -32,
+    marginTop: -32,
+    borderRadius: 32,
+    backgroundColor: 'rgba(0, 0, 0, 0.48)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  videoPlayIcon: {
+    color: '#fff',
+    fontSize: 30,
+    fontWeight: '900',
+    marginLeft: 4,
+  },
   input: {
     borderWidth: 1,
     borderColor: '#ccc',
@@ -183,5 +259,34 @@ const styles = StyleSheet.create({
   },
   buttonWrapper: {
     marginTop: 20,
+    alignItems: 'center',
+  },
+  submitButton: {
+    backgroundColor: '#FFD700',
+    paddingVertical: 12,
+    paddingHorizontal: 34,
+    borderRadius: 999,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 4,
+  },
+  submitButtonText: {
+    color: '#24160B',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  loadingRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  loadingText: {
+    marginLeft: 10,
+    fontSize: 16,
+    color: '#24160B',
+    fontWeight: '600',
   },
 });

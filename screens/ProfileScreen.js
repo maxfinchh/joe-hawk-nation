@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, Linking } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, Linking, ScrollView } from 'react-native';
 import { getAuth, signOut, deleteUser } from 'firebase/auth';
 import { getFirestore, doc, getDoc, deleteDoc, setDoc } from 'firebase/firestore';
 import { useNavigation } from '@react-navigation/native';
@@ -247,43 +247,170 @@ export default function ProfileScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.text}>Email: {userEmail}</Text>
-      <Text style={styles.text}>Status: {premiumStatus}</Text>
-      <TouchableOpacity onPress={handleLogout}>
-        <Text style={{ color: 'blue', marginTop: 20 }}>Log Out</Text>
-      </TouchableOpacity>
-      <TouchableOpacity onPress={handleDeleteAccount}>
-        <Text style={{ color: 'red', marginTop: 20 }}>Delete Account</Text>
-      </TouchableOpacity>
-      <TouchableOpacity onPress={handleRestorePurchases}>
-        <Text style={{ color: 'purple', marginTop: 20 }}>Restore Purchases</Text>
-      </TouchableOpacity>
-      <TouchableOpacity onPress={() => handleOpenLink(PRIVACY_POLICY_URL, 'Privacy Policy')}>
-        <Text style={{ color: 'blue', marginTop: 20 }}>Privacy Policy</Text>
-      </TouchableOpacity>
-      <TouchableOpacity onPress={() => handleOpenLink(TERMS_URL, 'Terms of Service')}>
-        <Text style={{ color: 'blue', marginTop: 20 }}>Terms of Service</Text>
-      </TouchableOpacity>
-      <TouchableOpacity onPress={() => handleOpenLink(GUIDELINES_URL, 'Community Guidelines')}>
-        <Text style={{ color: 'blue', marginTop: 20 }}>Community Guidelines</Text>
-      </TouchableOpacity>
-      <TouchableOpacity onPress={handleUpgradeToPremium}>
-        <Text style={{ color: 'green', marginTop: 20 }}>Upgrade to Premium</Text>
-      </TouchableOpacity>
-    </View>
+    <ScrollView contentContainerStyle={styles.container}>
+      <View style={styles.profileCard}>
+        <View style={styles.avatarCircle}>
+          <Text style={styles.avatarText}>{userEmail ? userEmail.charAt(0).toUpperCase() : '?'}</Text>
+        </View>
+
+        <Text style={styles.emailText}>{userEmail}</Text>
+        <View style={premiumStatus === 'Premium User' ? styles.premiumBadge : styles.freeBadge}>
+          <Text style={premiumStatus === 'Premium User' ? styles.premiumBadgeText : styles.freeBadgeText}>
+            {premiumStatus || 'Loading...'}
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.sectionCard}>
+        <Text style={styles.sectionTitle}>Account</Text>
+        <TouchableOpacity style={styles.primaryButton} onPress={handleUpgradeToPremium}>
+          <Text style={styles.primaryButtonText}>Upgrade to Premium</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.secondaryButton} onPress={handleRestorePurchases}>
+          <Text style={styles.secondaryButtonText}>Restore Purchases</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.secondaryButton} onPress={handleLogout}>
+          <Text style={styles.secondaryButtonText}>Log Out</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.dangerButton} onPress={handleDeleteAccount}>
+          <Text style={styles.dangerButtonText}>Delete Account</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.sectionCard}>
+        <Text style={styles.sectionTitle}>Legal</Text>
+        <TouchableOpacity style={styles.linkButton} onPress={() => handleOpenLink(PRIVACY_POLICY_URL, 'Privacy Policy')}>
+          <Text style={styles.linkButtonText}>Privacy Policy</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.linkButton} onPress={() => handleOpenLink(TERMS_URL, 'Terms of Service')}>
+          <Text style={styles.linkButtonText}>Terms of Service</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.linkButton} onPress={() => handleOpenLink(GUIDELINES_URL, 'Community Guidelines')}>
+          <Text style={styles.linkButtonText}>Community Guidelines</Text>
+        </TouchableOpacity>
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
+    padding: 20,
+    backgroundColor: '#F3F0EC',
+  },
+  profileCard: {
+    backgroundColor: '#24160B',
+    borderRadius: 18,
+    padding: 22,
+    alignItems: 'center',
+    marginBottom: 18,
+    shadowColor: '#000',
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 4,
+  },
+  avatarCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: '#FFD700',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    marginBottom: 12,
   },
-  text: {
+  avatarText: {
+    color: '#24160B',
+    fontSize: 30,
+    fontWeight: 'bold',
+  },
+  emailText: {
+    color: 'white',
+    fontSize: 17,
+    fontWeight: '600',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  premiumBadge: {
+    backgroundColor: '#FFD700',
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+  },
+  premiumBadgeText: {
+    color: '#24160B',
+    fontWeight: 'bold',
+  },
+  freeBadge: {
+    backgroundColor: '#EFEFEF',
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+  },
+  freeBadgeText: {
+    color: '#444',
+    fontWeight: 'bold',
+  },
+  sectionCard: {
+    backgroundColor: 'white',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#E1DDD7',
+  },
+  sectionTitle: {
     fontSize: 18,
+    fontWeight: 'bold',
+    color: '#24160B',
+    marginBottom: 12,
+  },
+  primaryButton: {
+    backgroundColor: '#FFD700',
+    borderRadius: 12,
+    paddingVertical: 13,
+    alignItems: 'center',
     marginBottom: 10,
+  },
+  primaryButtonText: {
+    color: '#24160B',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  secondaryButton: {
+    backgroundColor: '#F4F4F4',
+    borderRadius: 12,
+    paddingVertical: 13,
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  secondaryButtonText: {
+    color: '#24160B',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  dangerButton: {
+    backgroundColor: '#FFF1F1',
+    borderRadius: 12,
+    paddingVertical: 13,
+    alignItems: 'center',
+  },
+  dangerButtonText: {
+    color: '#C62828',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  linkButton: {
+    backgroundColor: '#F4F4F4',
+    borderRadius: 12,
+    paddingVertical: 13,
+    paddingHorizontal: 14,
+    marginBottom: 10,
+  },
+  linkButtonText: {
+    color: '#24160B',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
