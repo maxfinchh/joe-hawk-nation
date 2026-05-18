@@ -38,7 +38,7 @@ PODS:
     - ExpoModulesCore
   - ExpoFont (14.0.8):
     - ExpoModulesCore
-  - ExpoImagePicker (17.0.8):
+  - ExpoImagePicker (17.0.11):
     - ExpoModulesCore
   - ExpoKeepAwake (15.0.7):
     - ExpoModulesCore
@@ -2312,7 +2312,7 @@ SPEC CHECKSUMS:
   ExpoAsset: 9ba6fbd677fb8e241a3899ac00fa735bc911eadf
   ExpoFileSystem: 5fb091ea11198e109ceef2bdef2e6e66523e62c4
   ExpoFont: 86ceec09ffed1c99cfee36ceb79ba149074901b5
-  ExpoImagePicker: d251aab45a1b1857e4156fed88511b278b4eee1c
+  ExpoImagePicker: ade85e148f735fc7e6f27dfe3eef28eb3887e90a
   ExpoKeepAwake: 1a2e820692e933c94a565ec3fbbe38ac31658ffe
   ExpoModulesCore: c03ac4bc5a83469ca1222c3954a0499cd059addf
   FBLazyVector: 9e0cd874afd81d9a4d36679daca991b58b260d42
